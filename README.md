@@ -43,3 +43,50 @@ In this data set, I have analyzed the Zomato sales data for Bangalore city. In t
 
 4)	I have automated this code for all the restaurants.
 
+from nltk.corpus import stopwords
+from nltk.tokenize import RegexpTokenizer
+from nltk.probability import FreqDist
+from nltk.util import bigrams, trigrams
+import nltk
+
+def process_reviews(rest_type):
+    data = df.dropna(subset=['rest_type'])
+    # Filter the data for the specified restaurant type
+    r = data[data['rest_type'].str.contains(rest_type)]
+    
+    # Convert reviews to lowercase
+    r['reviews_list'] = r['reviews_list'].apply(lambda x: x.lower())
+    
+    # Tokenize the reviews
+    tokenizer = RegexpTokenizer("[a-zA-Z]+")
+    reviews_tokens = r['reviews_list'].apply(tokenizer.tokenize)
+    
+    # Download the stopwords corpus if not already downloaded
+    nltk.download('stopwords', quiet=True)
+    
+    # Define the stop words
+    stop = stopwords.words('english')
+    stop.extend(['rated', 'n', 'x', 'X', 'RATED', 'Rated', 'nan', 'N', 'NAN'])
+    
+    # Remove stop words from the tokens
+    reviews_tokens_clean = reviews_tokens.apply(lambda x: [token for token in x if token not in stop])
+    
+    # Flatten the list of tokens for bigrams and trigrams analysis
+    total_reviews_1D = [word for sublist in reviews_tokens_clean for word in sublist]
+    
+    # Calculate bigrams and their frequencies
+    bi_gram = bigrams(total_reviews_1D)
+    fd_bigrams = FreqDist(bi_gram)
+    
+    # Calculate trigrams and their frequencies
+    tri_gram = trigrams(total_reviews_1D)
+    fd_trigrams = FreqDist(tri_gram)
+    
+    # Plot the top 30 bigrams and trigrams with dynamic titles
+    plt.figure(figsize=(20, 10))
+    fd_bigrams.plot(45, title=f"Top 30 Bigrams of {rest_type} Restaurant")
+    plt.figure(figsize=(20, 10))
+    fd_trigrams.plot(45, title=f"Top 30 Trigrams of {rest_type} Restaurant")
+
+# Example usage:
+# process_reviews('desired_restaurant_type')
